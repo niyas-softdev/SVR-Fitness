@@ -170,6 +170,20 @@ function UserController() {
     setUserId(""); // Reset userId field
   };
 
+  const handleWhatsAppClick = (phone) => {
+    setCurrentUserPhone(phone);
+    setMessage(""); // Clear previous message
+    setIsModalOpen(true); // Open the modal
+  };
+
+  const sendMessage = () => {
+    const url = `https://wa.me/${currentUserPhone}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(url, "_blank");
+    setIsModalOpen(false); // Close the modal after sending
+  };
+
   return (
     <div className="container mx-auto min-h-screen py-5 px-4 bg-black text-white">
       {!editingUser && (
@@ -254,7 +268,7 @@ function UserController() {
                           <MdDelete className="mr-2" /> Delete
                         </button>
                         <button
-                          key={user.phoneNumber}
+                          onClick={() => handleWhatsAppClick(user.phoneNumber)}
                           className="bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all flex items-center"
                         >
                           <FaWhatsapp />

@@ -2,10 +2,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaWhatsapp } from "react-icons/fa";
 
 const ExpireUser = () => {
   const [aboutToExpireUsers, setAboutToExpireUsers] = useState([]);
   const [expiredUsers, setExpiredUsers] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentUserPhone, setCurrentUserPhone] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     fetchExpiringAndExpiredUsers();
@@ -15,7 +19,7 @@ const ExpireUser = () => {
     try {
       const response = await axios.get(
         `http://localhost:5174/api/user/expiredUsers`
-      ); // Adjust the API path if necessary
+      );
       setAboutToExpireUsers(response.data.data.aboutToExpire);
       setExpiredUsers(response.data.data.expired);
       toast.success("Users retrieved successfully.");
@@ -32,69 +36,121 @@ const ExpireUser = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const handleWhatsAppClick = (phone, isExpired) => {
+    setCurrentUserPhone(phone);
+    setMessage(
+      isExpired
+        ? "Your plan is expired. Please renew it."
+        : "Your plan is expiring soon. Please renew it."
+    );
+    setIsModalOpen(true);
+  };
+
+  const sendMessage = () => {
+    const url = `https://wa.me/${currentUserPhone}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(url, "_blank");
+    setIsModalOpen(false);
+  };
+
   return (
-    <div className="container mx-auto py-5 px-4 ">
-      <h1 className="text-3xl font-extrabold  mb-6 text-white">Users with Expired or Expiring Plans</h1>
+    <div className="container mx-auto py-5 px-4">
+      <h1 className="text-3xl font-extrabold mb-6 text-white text-center sm:text-left">
+        Users with Expired or Expiring Plans
+      </h1>
       <ToastContainer />
 
+      {/* Plans Expiring Soon */}
       {aboutToExpireUsers.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl text-yellow-400 font-bold mb-4">Plans Expiring Soon (Within 10 Days)</h2>
-          <table className="min-w-full bg-white bg-opacity-10 backdrop-blur-md text-white shadow-lg rounded-lg">
-            <thead>
-              <tr className="bg-white bg-opacity-20">
-                <th className="py-4 px-6 border-b border-white">Name</th>
-                <th className="py-4 px-6 border-b border-white">Email</th>
-                <th className="py-4 px-6 border-b border-white">Plan</th>
-                <th className="py-4 px-6 border-b border-white">Expiring Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {aboutToExpireUsers.map((user) => (
-                <tr key={user._id} className="hover:bg-white hover:bg-opacity-20 transition">
-                  <td className="py-4 px-6 border-b border-white">{user.name}</td>
-                  <td className="py-4 px-6 border-b border-white">{user.email}</td>
-                  <td className="py-4 px-6 border-b border-white">{user.plan}</td>
-                  <td className="py-4 px-6 border-b border-white text-yellow-400 font-semibold">
-                    {formatDate(user.expiryDate)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className="text-2xl text-yellow-400 font-bold mb-4 text-center sm:text-left">
+            Plans Expiring Soon (Within 10 Days)
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            {aboutToExpireUsers.map((user) => (
+              <div
+                key={user._id}
+                className="bg-white bg-opacity-10 backdrop-blur-md text-white shadow-lg rounded-lg p-4 w-full sm:w-1/2 lg:w-1/3"
+              >
+                <p className="font-semibold">Name: {user.name}</p>
+                <p>Email: {user.email}</p>
+                <p>Plan: {user.plan}</p>
+                <p className="text-yellow-400 font-semibold">
+                  Expiring Date: {formatDate(user.expiryDate)}
+                </p>
+                <button
+                  onClick={() => handleWhatsAppClick(user.phoneNumber, false)}
+                  className="mt-4 bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all flex items-center"
+                >
+                  <FaWhatsapp className="mr-2" /> WhatsApp
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* Expired Plans */}
       {expiredUsers.length > 0 && (
         <div>
-          <h2 className="text-2xl  text-red-400 font-bold mb-4">Expired Plans</h2>
-          <table className="min-w-full bg-white bg-opacity-10 backdrop-blur-md text-white shadow-lg rounded-lg">
-            <thead>
-              <tr className="bg-white bg-opacity-20">
-                <th className="py-4 px-6 border-b border-white">Name</th>
-                <th className="py-4 px-6 border-b border-white">Email</th>
-                <th className="py-4 px-6 border-b border-white">Plan</th>
-                <th className="py-4 px-6 border-b border-white">Expired Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expiredUsers.map((user) => (
-                <tr key={user._id} className="hover:bg-white hover:bg-opacity-20 transition">
-                  <td className="py-4 px-6 border-b border-white">{user.name}</td>
-                  <td className="py-4 px-6 border-b border-white">{user.email}</td>
-                  <td className="py-4 px-6 border-b border-white">{user.plan}</td>
-                  <td className="py-4 px-6 border-b border-white text-red-400 font-semibold">
-                    {formatDate(user.expiryDate)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className="text-2xl text-red-400 font-bold mb-4 text-center sm:text-left">
+            Expired Plans
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            {expiredUsers.map((user) => (
+              <div
+                key={user._id}
+                className="bg-white bg-opacity-10 backdrop-blur-md text-white shadow-lg rounded-lg p-4 w-full sm:w-1/2 lg:w-1/3"
+              >
+                <p className="font-semibold">Name: {user.name}</p>
+                <p>Email: {user.email}</p>
+                <p>Plan: {user.plan}</p>
+                <p className="text-red-400 font-semibold">
+                  Expired Date: {formatDate(user.expiryDate)}
+                </p>
+                <button
+                  onClick={() => handleWhatsAppClick(user.phoneNumber, true)}
+                  className="mt-4 bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all flex items-center"
+                >
+                  <FaWhatsapp className="mr-2" /> WhatsApp
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {aboutToExpireUsers.length === 0 && expiredUsers.length === 0 && (
-        <p className="text-white text-center mt-8">No expiring or expired plans found.</p>
+      {/* WhatsApp Message Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-80 flex justify-center items-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800 dark:text-white">
+              Send WhatsApp Message
+            </h2>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Enter your message"
+              rows="4"
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400 mb-4 text-black"
+            />
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={sendMessage}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition"
+              >
+                Send
+              </button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
