@@ -34,10 +34,6 @@ const productSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Ensure `updatedAt` is updated on every save
-productSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
+
 
 module.exports = mongoose.model('Product', productSchema);

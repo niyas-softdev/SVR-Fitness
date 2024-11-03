@@ -14,6 +14,8 @@ const getProduct = async (req, res) => {
   }
 };
 
+
+
 // CREATE a new product
 const createProduct = async (req, res) => {
   try {
@@ -27,6 +29,18 @@ const createProduct = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const productCount = async (req, res) => {
+  try {
+    const productCount = await Product.countDocuments();
+    res.status(200).json({
+      productCount: productCount,
+      message: "Product count fetched successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
 
 // UPDATE a product by ID
 const updateProduct = async (req, res) => {
@@ -72,4 +86,5 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  productCount,
 };

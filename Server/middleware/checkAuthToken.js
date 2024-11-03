@@ -1,78 +1,136 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const createError = require("http-errors");
+const ms = require("ms");
+const { generateJWT } = require("../utils/generate&ClearTokens");
+const { decrypt, encrypt } = require("../utils/encryptDecrypt");
+const UserModal = require("../models/userModel");
 
-// Middleware to verify the auth token
-function verifyToken(req, res, next) {
-  const authToken = req.cookies.authToken;
-  const refreshToken = req.cookies.refreshToken;
+const {
+  ACCESS_TOKEN_LIFE,
+  REFRESH_TOKEN_LIFE,
+  ACCESS_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET,
+  NODE_ENV
+} = process.env;
+const dev = NODE_ENV === "development";
 
-  // Check if both authToken and refreshToken are provided
-  if (!authToken || !refreshToken) {
-    return res.status(401).json({
-      message: 'Authentication failed: No authToken or refreshToken provided',
-      ok: false,
+const generateAuthTokens = async (req, res, next) => {
+  // console.log("NODE_ENV --------------> ", dev);
+  try {
+    const user = await UserModal.findById(req._id);
+    if (!user) {
+      const error = createError.NotFound("User not found");
+      throw error;
+    }
+
+    const ip = req.ip;
+    // console.log("<><><>><><><><><", ip);
+
+    const ACrefreshToken = generateJWT(
+      req._id,
+      req.role,
+      ip,
+      REFRESH_TOKEN_SECRET,
+      REFRESH_TOKEN_LIFE
+    );
+
+    const accessToken = generateJWT(
+      req._id,
+      req.role,
+      ip,
+      ACCESS_TOKEN_SECRET,
+      ACCESS_TOKEN_LIFE
+    );
+
+    // Update user document with refresh token and expiration time
+    user.ACaccessToken = "Bearer " + accessToken;
+    user.ACrefreshToken = ACrefreshToken;
+    user.ACaccessTokenExpiresAt = Date.now() + ms(ACCESS_TOKEN_LIFE);
+    user.ACrefreshTokenExpiresAt = Date.now() + ms(REFRESH_TOKEN_LIFE);
+    user.ip = ip;
+    await user.save();
+    res.cookie("ACrefreshToken", ACrefreshToken, {
+      httpOnly: true,
+      // secure: !dev,
+      secure: true,
+      signed: true,
+      expires: new Date(Date.now() + ms(REFRESH_TOKEN_LIFE)),
+      sameSite: "None"
     });
+
+    // Calculate expiration time in user's local time zone
+    const accessTokenExpirationTime = new Date(
+      Date.now() + ms(ACCESS_TOKEN_LIFE)
+    );
+    accessTokenExpirationTime.toLocaleString("en-US", {
+      timeZone: user.timezone
+    });
+    const refreshTokenExpirationTime = new Date(
+      Date.now() + ms(REFRESH_TOKEN_LIFE)
+    );
+    refreshTokenExpirationTime.toLocaleString("en-US", {
+      timeZone: user.timezone
+    });
+
+    // token: "Bearer " + token
+    // const encryptedData = encrypt(JSON.stringify(user));
+
+    return res.status(200).json({
+      message: "Process Successful",
+      return: user
+      /*       accessToken: "Bearer " + accessToken,
+      accessTokenExpiresAt: accessTokenExpirationTime.toLocaleString(),
+      ACrefreshToken: ACrefreshToken,
+      ACrefreshTokenExpiresAt: refreshTokenExpirationTime.toLocaleString() */
+    });
+  } catch (error) {
+    return next(error);
   }
+};
 
-  // Verify the authToken
-  jwt.verify(authToken, process.env.JWT_SECRET_KEY, (err, decoded) => {
-    if (err) {
-      // If authToken has expired or is invalid, check the refreshToken
-      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY, (refreshErr, refreshDecoded) => {
-        if (refreshErr) {
-          // Both tokens are invalid, user must log in again
-          return res.status(401).json({
-            message: 'Authentication failed: Both tokens are invalid. Please log in again.',
-            ok: false,
-          });
-        } else {
-          // Refresh the authToken using the refreshToken
-          const newAuthToken = jwt.sign(
-            { userId: refreshDecoded.userId },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: '15m' } // Issue a new short-lived auth token
-          );
-          const newRefreshToken = jwt.sign(
-            { userId: refreshDecoded.userId },
-            process.env.JWT_REFRESH_SECRET_KEY,
-            { expiresIn: '7d' } // Refresh token for another 7 days
-          );
+const isAuthenticated = async (req, res, next) => {
+  try {
+    const authToken = req.get("Authorization");
 
-          // Set the new tokens as secure cookies
-          res.cookie('authToken', newAuthToken, {
-            httpOnly: true,
-            secure: true, // Use true in production (HTTPS)
-            sameSite: 'Strict', // Prevent CSRF attacks
-          });
-          res.cookie('refreshToken', newRefreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict',
-          });
-
-          // Attach the userId to the request and continue processing
-          req.userId = refreshDecoded.userId;
-          next();
-        }
-      });
-    } else {
-      // If authToken is valid, proceed with the request
-      req.userId = decoded.userId;
-      next();
-    }
-  });
-}
-
-// Middleware to verify if the user has the required role(s)
-function verifyRole(allowedRoles) {
-  return (req, res, next) => {
-    const userRole = req.userRole; // Assuming role is attached in verifyToken
-
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+    // console.log("authToken: ", authToken);
+    const accessToken = authToken?.split("Bearer")[1];
+    console.log("accessToken: ", accessToken);
+    if (!accessToken) {
+      return res.status(401).json({ message: "Unauthorized Access Denied.!" });
     }
 
-    next();
-  };
-}
+    const { signedCookies = {} } = req;
+    console.log("signedCookies:-----------------------------> ", signedCookies);
+    const { ACrefreshToken } = signedCookies;
+    if (!ACrefreshToken) {
+      return res.status(401).json({ message: "Unauthorized Access Denied..!" });
+    }
 
-module.exports = { verifyToken, verifyRole };
+    const decodedToken = jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
+    const { _id } = decodedToken;
+
+    // console.log("decodedToken: ", _id);
+
+    const user = await UserModal.findById(_id);
+
+    if (
+      !user ||
+      user.ACrefreshToken !== ACrefreshToken ||
+      user.ACrefreshTokenExpiresAt < Date.now()
+    ) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized Access Denied...!" });
+    }
+
+    req._id = user.id;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = {
+  generateAuthTokens,
+  isAuthenticated
+};
