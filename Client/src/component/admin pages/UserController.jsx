@@ -170,10 +170,19 @@ function UserController() {
     setUserId(""); // Reset userId field
   };
 
-  const handleWhatsAppClick = (phone) => {
-    setCurrentUserPhone(phone);
-    setMessage(""); // Clear previous message
-    setIsModalOpen(true); // Open the modal
+  const handleWhatsAppClick = (user) => {
+    const defaultMessage = `User ID: ${user.userId}\nName: ${
+      user.name
+    }\nPlan: ${user.plan}\nJoin Date: ${new Date(
+      user.planDate
+    ).toLocaleDateString()}\nExpiry Date: ${new Date(
+      user.expiryDate
+    ).toLocaleDateString()}\nStatus: ${
+      user.planStatus ? "Paid Successfully" : "Pending"
+    }`;
+    setCurrentUserPhone(user.phoneNumber);
+    setMessage(defaultMessage);
+    setIsModalOpen(true);
   };
 
   const sendMessage = () => {
@@ -268,7 +277,7 @@ function UserController() {
                           <MdDelete className="mr-2" /> Delete
                         </button>
                         <button
-                          onClick={() => handleWhatsAppClick(user.phoneNumber)}
+                          onClick={() => handleWhatsAppClick(user)}
                           className="bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all flex items-center"
                         >
                           <FaWhatsapp />

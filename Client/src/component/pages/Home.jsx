@@ -6,7 +6,7 @@ import { teamMembers } from "../datas/teamDatas";
 import { features } from "../datas/featuresDatas";
 import StatsSection from "../section/statsSection";
 import AppNavbar from "../common/AppNavbar";
-import BmiCheck from "../pages/bmiCalculator";
+import BmiCheck from "./bmiCalculator";
 
 const Home = () => {
   const { frequencies, plans } = plansData;
@@ -255,8 +255,6 @@ const Home = () => {
       {/* stats */}
 
       <StatsSection />
-
-    
 
       {/* Testimonial */}
 

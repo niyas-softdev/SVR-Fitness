@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import {
-  Disclosure,
-  Menu,
-  Transition
-} from "@headlessui/react";
-import logo from "../../assets/logo.png";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { jwtDecode } from "jwt-decode";
+import { useDispatch, useSelector } from "react-redux";
 
+import { useNavigate, Link } from "react-router-dom";
+import { Disclosure, Menu, Transition } from "@headlessui/react";
+import logo from "../../assets/vr Fitness transparent Gym Logo.png";
+import {
+  Bars3Icon,
+  BellIcon,
+  XMarkIcon,
+  ShoppingCartIcon
+} from "@heroicons/react/24/outline";
+import { jwtDecode } from "jwt-decode";
+import { fetchCartCount } from "../Redux/cart/cartAction";
 function AppNavbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const cartCount = useSelector((state) => state.cart.cartCount);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const userToken = sessionStorage.getItem("userToken");
-
     if (userToken) {
       try {
         const decoded = jwtDecode(userToken);
@@ -35,6 +40,7 @@ function AppNavbar() {
             role: decoded.role
           });
           setIsLoggedIn(true);
+          dispatch(fetchCartCount(userId));
         }
       } catch (error) {
         console.error("Invalid token:", error);
@@ -42,7 +48,7 @@ function AppNavbar() {
         navigate("/login");
       }
     }
-  }, [navigate]);
+  }, [dispatch, navigate]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("userToken");
@@ -93,7 +99,7 @@ function AppNavbar() {
                     Training
                   </Link>
                   <Link
-                    to="/productController"
+                    to="/productPage"
                     className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
                   >
                     Product
@@ -109,14 +115,17 @@ function AppNavbar() {
                 </div>
               </div>
 
-              {/* Profile and Login/Logout */}
+              {/* Profile, Cart, and Login/Logout */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <button
-                  type="button"
-                  className="rounded-full p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white"
-                >
-                  <BellIcon className="h-6 w-6" aria-hidden="true" />
-                </button>
+                {/* Cart Icon */}
+                <Link to="/cart" className="relative ml-4">
+                  <ShoppingCartIcon className="h-6 w-6 text-gray-400 hover:text-white transition-colors duration-300" />
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-2/4 -translate-y-1/2 bg-red-600 rounded-full">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
 
                 {isLoggedIn ? (
                   <div className="ml-3 flex items-center space-x-4">
@@ -191,7 +200,7 @@ function AppNavbar() {
               </Disclosure.Button>
               <Disclosure.Button
                 as={Link}
-                to="/productController"
+                to="/productPage"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
               >
                 Product
@@ -200,11 +209,19 @@ function AppNavbar() {
                 <Disclosure.Button
                   as={Link}
                   to="/dashboard"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-indigo-400 hover:bg-indigo-300"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-indigo-400 hover:text-indigo-300"
                 >
                   Dashboard
                 </Disclosure.Button>
               )}
+              {/* Mobile Cart Link */}
+              <Disclosure.Button
+                as={Link}
+                to="/cart"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+              >
+                Cart
+              </Disclosure.Button>
             </div>
           </Disclosure.Panel>
         </>

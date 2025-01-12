@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { workoutPlans } from "../datas/workoutDatas";
 import AppNavbar from "../common/AppNavbar";
-import BMICalculator from "../pages/bmiCalculator";
+import BMICalculator from "./bmiCalculator";
 import StatsSection from "../section/statsSection";
 import { motion } from "framer-motion"; // Import Framer Motion for animations
-
 
 const fadeIn = {
   hidden: { opacity: 0, y: 50 },
@@ -19,7 +18,11 @@ const WorkoutPlan = () => {
 
   const handleFilter = () => {
     const genderPlans = workoutPlans[selectedCategory];
-    if (genderPlans && genderPlans[selectedGoal] && genderPlans[selectedGoal][selectedLevel]) {
+    if (
+      genderPlans &&
+      genderPlans[selectedGoal] &&
+      genderPlans[selectedGoal][selectedLevel]
+    ) {
       setFilteredWorkouts(genderPlans[selectedGoal][selectedLevel]);
     } else {
       setFilteredWorkouts([]);
@@ -30,9 +33,9 @@ const WorkoutPlan = () => {
     <div className="min-h-screen bg-black text-white">
       <AppNavbar />
 
-     {/* Hero Section */}
-{/* Hero Section */}
-<motion.div
+      {/* Hero Section */}
+      {/* Hero Section */}
+      <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeIn}
@@ -47,10 +50,11 @@ const WorkoutPlan = () => {
 
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
-          Achieve Your Fitness Goals with Us
+            Achieve Your Fitness Goals with Us
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-300">
-          Personalized workout plans, expert nutrition advice, and personal training to guide you every step of the way.
+            Personalized workout plans, expert nutrition advice, and personal
+            training to guide you every step of the way.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <a
@@ -69,56 +73,68 @@ const WorkoutPlan = () => {
         </div>
       </motion.div>
 
+      {/* Stats Section */}
+      <StatsSection />
 
-     {/* Personal Training Section */}
-<section className="py-20 bg-black">
-  <h2 className="text-4xl font-bold text-center mb-12 text-white">
-    Personal Training Services
-  </h2>
+      {/* BMI Calculator Section */}
+      <section className="py-20 bg-black/50">
+        <div className="flex justify-center">
+          <BMICalculator />
+        </div>
+      </section>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8">
-    {/* 1-on-1 Training Card */}
-    <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
-      <div className="p-8">
-        <h3 className="text-3xl font-semibold text-white mb-4">
-          1-on-1 Training
-        </h3>
-        <p className="text-gray-300">
-          Get personalized coaching to meet your fitness goals with expert trainers.
-        </p>
-      </div>
-    </div>
+      {/* Personal Training Section */}
+      <section className="py-20 bg-black">
+        <h2 className="text-4xl font-bold text-center mb-12 text-white">
+          Personal Training Services
+        </h2>
 
-    {/* Group Classes Card */}
-    <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
-      <div className="p-8">
-        <h3 className="text-3xl font-semibold text-white mb-4">
-          Group Classes
-        </h3>
-        <p className="text-gray-300">
-          Join fun and challenging group workouts designed for all fitness levels.
-        </p>
-      </div>
-    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8">
+          {/* 1-on-1 Training Card */}
+          <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
+            <div className="p-8">
+              <h3 className="text-3xl font-semibold text-white mb-4">
+                1-on-1 Training
+              </h3>
+              <p className="text-gray-300">
+                Get personalized coaching to meet your fitness goals with expert
+                trainers.
+              </p>
+            </div>
+          </div>
 
-    {/* Online Coaching Card */}
-    <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
-      <div className="p-8">
-        <h3 className="text-3xl font-semibold text-white mb-4">
-          Online Coaching
-        </h3>
-        <p className="text-gray-300">
-          Train from anywhere with our expert-led online workout plans.
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
+          {/* Group Classes Card */}
+          <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
+            <div className="p-8">
+              <h3 className="text-3xl font-semibold text-white mb-4">
+                Group Classes
+              </h3>
+              <p className="text-gray-300">
+                Join fun and challenging group workouts designed for all fitness
+                levels.
+              </p>
+            </div>
+          </div>
 
+          {/* Online Coaching Card */}
+          <div className="group relative overflow-hidden rounded-xl bg-black/30 backdrop-blur-lg shadow-lg border border-white/10 transition transform hover:scale-105">
+            <div className="p-8">
+              <h3 className="text-3xl font-semibold text-white mb-4">
+                Online Coaching
+              </h3>
+              <p className="text-gray-300">
+                Train from anywhere with our expert-led online workout plans.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Workout Plan Filter Section */}
       <section className="container mx-auto p-8">
-        <h2 className="text-4xl font-bold text-center mb-8">Choose Your Workout Plan</h2>
+        <h2 className="text-4xl font-bold text-center mb-8">
+          Choose Your Workout Plan
+        </h2>
         <div className="flex flex-wrap justify-center gap-4 mb-12">
           <select
             className="w-full max-w-xs p-3 bg-black/30 rounded-lg text-white"
@@ -168,8 +184,13 @@ const WorkoutPlan = () => {
                     key={idx}
                     className="mb-4 p-4 bg-gray-700 rounded-lg hover:bg-gray-600"
                   >
-                    <h4 className="text-xl font-medium mb-2">{exercise.name}</h4>
-                    <p>Sets: {exercise.sets}, Reps: {exercise.reps}, Rest: {exercise.rest}</p>
+                    <h4 className="text-xl font-medium mb-2">
+                      {exercise.name}
+                    </h4>
+                    <p>
+                      Sets: {exercise.sets}, Reps: {exercise.reps}, Rest:{" "}
+                      {exercise.rest}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -182,19 +203,11 @@ const WorkoutPlan = () => {
         </div>
       </section>
 
-      {/* BMI Calculator Section */}
-      <section className="py-20 bg-black/50">
-        <div className="flex justify-center">
-          <BMICalculator />
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <StatsSection />
-
       {/* Call-to-Action Section */}
       <section className="py-10 bg-black text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">Ready to Transform?</h2>
+        <h2 className="text-3xl font-bold text-white mb-4">
+          Ready to Transform?
+        </h2>
         <p className="text-xl text-gray-100 mb-6">
           Join our personal training program today!
         </p>

@@ -8,7 +8,10 @@ import ProtectedRoute from "./component/common/ProtectedRoute";
 import Profile from "./component/pages/profile";
 import Unauthorized from "./component/pages/unauthorized";
 import Home from "./component/pages/Home";
-import DashboardRouter from "./component/admin pages/DashboardRouter"; // Handles dashboard routes
+import DashboardRouter from "./component/admin pages/DashboardRouter";
+import ProductPage from "./component/pages/productPage";
+import CartPage from "./component/pages/cartPage";
+import Footer from "./component/pages/footer";
 
 const App = () => {
   return (
@@ -19,6 +22,8 @@ const App = () => {
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/cart" element={<CartPage />} />;
+        <Route path="/footer" element={<Footer />} />
 
        
         <Route
@@ -34,6 +39,15 @@ const App = () => {
           element={
             <ProtectedRoute roles={["admin", "user"]}>
               <WorkoutPlan />
+            </ProtectedRoute>
+          }
+        />
+
+<Route
+          path="/productPage"
+          element={
+            <ProtectedRoute roles={["admin", "user"]}>
+              <ProductPage />
             </ProtectedRoute>
           }
         />

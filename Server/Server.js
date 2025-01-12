@@ -12,6 +12,7 @@ const authRoute = require("./routes/authRoute");
 const productRoute = require("./routes/productRoute");
 const nutritionRoute = require("./routes/nutritionRoute");
 const adminRoute = require("./routes/adminRoute");
+const cartRoute = require("./routes/cartRoute");
 
 const app = express();
 
@@ -44,7 +45,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"], // Allow all origins temporarily
+    origin: ["http://localhost:3000", "http://localhost:5173","http://localhost:5174"], // Allow all origins temporarily
     methods: "GET,POST,PUT,DELETE",
     credentials: true // Allow cookies to be sent cross-origin
   })
@@ -56,6 +57,7 @@ app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/nutrition", nutritionRoute);
+app.use("/api/cart", cartRoute);
 
 // 404 Route handler
 app.use((req, res, next) => {
