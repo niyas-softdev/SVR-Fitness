@@ -1,127 +1,97 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { removeFromCart } from "../Redux/cart/cartAction";
-import { jwtDecode } from "jwt-decode"; // To decode the token
-import { useDispatch } from "react-redux";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  removeFromCart,
+  updateCartItemQuantity,
+  fetchCartItem
+} from "../Redux/cart/cartAction";
 
 const CartPage = () => {
-  const userId = localStorage.getItem("userId"); // Assuming the userId is stored here
-  const [cartItems, setCartItems] = useState([]);
-  const [subtotal, setSubtotal] = useState(0);
+  const userId = localStorage.getItem("userId");
   const dispatch = useDispatch();
 
-  // Fetch cart data directly
+  const cartData = useSelector((state) => state.cart);
+  const { items: cartItems = [], subtotal = 0 } = cartData; // Check key names
+
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        if (!userId) {
-          console.warn("User ID not found. Please log in.");
-          return;
-        }
+    console.log("Cart data updated:", cartData);
+    console.log("Cart items:", cartData.items);
+    console.log("Subtotal:", cartData.subtotal);
+    console.log("Cart count:", cartData.cartCount);
+  }, [cartData]);
 
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/api/cart/${userId}`
-        );
-        const items = response.data.items;
-
-        setCartItems(items);
-
-        // Calculate subtotal
-        const total = items.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
-        setSubtotal(total);
-      } catch (error) {
-        console.error(
-          "Error fetching cart:",
-          error.response?.data || error.message
-        );
-      }
-    };
-
-    fetchCart();
-  }, [userId]);
-
-  const getUserIdFromToken = () => {
-    try {
-      const token = sessionStorage.getItem("userToken"); // Retrieve the encrypted token
-      if (!token) throw new Error("No token found");
-
-      const decodedToken = jwtDecode(token); // Decode the token to extract user data
-      return decodedToken.userId; // Ensure your token contains `userId`
-    } catch (error) {
-      console.error("Error decoding token:", error);
-      return null; // Return null if decoding fails
-    }
-  };
-
-  const handleRemoveFromCart = async (e, productId) => {
-    e.preventDefault();
-
-    const userId = getUserIdFromToken();
+  // Fetch cart items on mount
+  useEffect(() => {
     if (!userId) {
-      alert("Please log in to remove items from the cart.");
+      console.warn("User ID not found. Please log in.");
       return;
     }
 
-    // Optimistically update the UI
-    const updatedCart = cartItems.filter(
+    dispatch(fetchCartItem(userId));
+  }, [userId, dispatch]);
+
+  const handleRemoveFromCart = async (productId) => {
+    const updatedItems = cartItems.filter(
       (item) => item.productId !== productId
     );
-    setCartItems(updatedCart);
+
+    // Optimistically update the UI
+    dispatch({
+      type: "REMOVE_FROM_CART",
+      payload: productId
+    });
 
     try {
       const response = await dispatch(removeFromCart(userId, productId));
 
-      if (response) {
-        alert("Item removed from cart successfully!");
-      } else {
-        // If API call fails, revert the UI change
-        setCartItems((prevItems) => [
-          ...prevItems,
-          cartItems.find((item) => item.productId === productId)
-        ]);
-        alert("Failed to remove item from cart. Please try again.");
+      // Check the response validity
+      if (!response || !response.cartCount) {
+        throw new Error("Invalid server response");
       }
+
+      console.log("Item removed successfully:", response.cartCount);
+      dispatch({ type: "CART_COUNT", payload: response.cartCount }); // Update cart count if needed
     } catch (error) {
-      // Revert UI change in case of error
-      setCartItems((prevItems) => [
-        ...prevItems,
-        cartItems.find((item) => item.productId === productId)
-      ]);
-      console.error("Error removing item from cart:", error);
-      alert("Failed to remove item from cart. Please try again.");
+      console.error("Error removing item:", error);
+
+      // Revert state on failure
+      dispatch({
+        type: "UPDATE_QUANTITY_OPTIMISTIC",
+        payload: [...cartItems]
+      });
     }
   };
 
-  // Handle quantity change
   const handleQuantityChange = async (productId, quantity) => {
-    if (quantity <= 0) return;
+    if (quantity < 1) {
+      alert("Quantity cannot be less than 1.");
+      return;
+    }
+
+    const updatedItems = cartItems.map((item) =>
+      item.id === productId ? { ...item, quantity } : item
+    );
+
+    dispatch({
+      type: "UPDATE_QUANTITY_OPTIMISTIC",
+      payload: updatedItems
+    });
 
     try {
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_API}/api/cart/${userId}/${productId}`,
-        { quantity }
+      const response = await dispatch(
+        updateCartItemQuantity(userId, productId, quantity)
       );
-
-      // Update the cart locally
-      const updatedCart = cartItems.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      );
-      setCartItems(updatedCart);
-
-      // Recalculate subtotal
-      const total = updatedCart.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      );
-      setSubtotal(total);
+      if (response?.data?.cart) {
+        // Use the server's response to update state
+        dispatch({
+          type: "UPDATE_QUANTITY",
+          payload: response.data.cart.items
+        });
+      } else {
+        throw new Error("Invalid response structure");
+      }
     } catch (error) {
-      console.error(
-        "Error updating item quantity:",
-        error.response?.data || error.message
-      );
+      console.error("Error updating cart:", error);
     }
   };
 
@@ -134,16 +104,26 @@ const CartPage = () => {
         ) : (
           <>
             <ul className="divide-y divide-gray-300">
-              {cartItems.map((item) => (
-                <li key={item.id} className="flex py-4">
+              {cartItems.map((item, index) => (
+                <li
+                  key={item.id || item.productId || index} // Ensure unique key
+                  className="flex py-4"
+                >
                   <img
                     src={item.images?.[0] || "/placeholder-image.png"}
-                    alt={item.name}
+                    alt={item.name || "Unknown Product"}
                     className="w-16 h-16 object-cover"
                   />
                   <div className="flex-1 px-4">
-                    <h3 className="font-bold">{item.name}</h3>
-                    <p>${item.price.toFixed(2)}</p>
+                    <h3 className="font-bold">{item.name || "Unnamed Item"}</h3>
+                    <p>
+                      $
+                      {
+                        item.price
+                          ? item.price.toFixed(2)
+                          : "0.00" /* Default price */
+                      }
+                    </p>
                   </div>
                   <div className="flex items-center">
                     <button
@@ -154,7 +134,7 @@ const CartPage = () => {
                     >
                       -
                     </button>
-                    <span className="px-4">{item.quantity}</span>
+                    <span className="px-4">{item.quantity || 0}</span>
                     <button
                       onClick={() =>
                         handleQuantityChange(item.id, item.quantity + 1)
@@ -164,7 +144,7 @@ const CartPage = () => {
                       +
                     </button>
                     <button
-                      onClick={(e) => handleRemoveFromCart(e, item.id)}
+                      onClick={() => handleRemoveFromCart(item.id)}
                       className="ml-4 text-red-500 hover:text-red-700"
                     >
                       Remove
@@ -175,7 +155,8 @@ const CartPage = () => {
             </ul>
             <div className="mt-6 text-right">
               <h2 className="text-lg font-bold">
-                Subtotal: ${subtotal.toFixed(2)}
+                Subtotal: $
+                {subtotal && !isNaN(subtotal) ? subtotal.toFixed(2) : "0.00"}
               </h2>
             </div>
           </>

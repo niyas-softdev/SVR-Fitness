@@ -2,56 +2,85 @@ import {
   ADD_TO_CART,
   REMOVE_FROM_CART,
   UPDATE_QUANTITY,
+  UPDATE_QUANTITY_OPTIMISTIC,
+  REVERT_QUANTITY,
   CART_COUNT
 } from "../cart/cartTypes";
 
 const initialState = {
-  cartItems: [],
-  cartCount: 0 // New property for the total count of items in the cart
+  items: [],
+  cartCount: 0,
+  subtotal: 0
 };
 
 const cartReducer = (state = initialState, action) => {
   switch (action.type) {
-    case ADD_TO_CART:
+    case "ADD_TO_CART":
       return {
         ...state,
-        cartItems: [...state.cartItems, action.payload],
-        cartCount: state.cartCount + action.payload.quantity // Increment cart count
+        items: [...state.items, action.payload], // Use 'items' consistently
+        cartCount: state.cartCount + (action.payload.quantity || 0)
       };
-    case REMOVE_FROM_CART: {
-      const removedItem = state.cartItems.find(
-        (item) => item.productId === action.payload
+    case "REMOVE_FROM_CART": {
+      const updatedItems = state.items.filter(
+        (item) => item.productId !== action.payload
       );
+
+      // Recalculate cartCount and subtotal
+      const updatedCartCount = updatedItems.reduce(
+        (count, item) => count + (item.quantity || 0),
+        0
+      );
+
+      const updatedSubtotal = updatedItems.reduce(
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+        0
+      );
+
+      console.log("REMOVE_FROM_CART called, updatedItems:", updatedItems);
+      console.log("Updated cartCount:", updatedCartCount);
+      console.log("Updated subtotal:", updatedSubtotal);
+
       return {
         ...state,
-        cartItems: state.cartItems.filter(
-          (item) => item.productId !== action.payload
-        ),
-        cartCount: state.cartCount - (removedItem?.cartQuantity || 0) // Decrement cart count
+        items: updatedItems,
+        cartCount: updatedCartCount,
+        subtotal: updatedSubtotal
       };
     }
     case UPDATE_QUANTITY:
+      // case UPDATE_QUANTITY_OPTIMISTIC:
       return {
         ...state,
-        cartItems: state.cartItems.map((item) =>
-          item.id === action.payload.id
-            ? { ...item, quantity: action.payload.quantity }
-            : item
-        ),
-        cartCount: state.cartItems.reduce(
-          (total, item) =>
-            total +
-            (item.id === action.payload.id
-              ? action.payload.quantity
-              : item.quantity),
+        items: action.payload,
+        subtotal: action.payload.reduce(
+          (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
           0
-        ) // Recalculate cart count
+        )
       };
-    case CART_COUNT:
+
+    case "FETCH_CART_ITEM":
       return {
         ...state,
-        cartCount: action.payload // Directly update the cart count
+        items: action.payload.items,
+        cartCount: action.payload.count,
+        subtotal: action.payload.items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        )
       };
+
+    case "CART_COUNT": {
+      // Ensure cartCount is valid
+      if (action.payload === null || action.payload === undefined) {
+        console.warn("Invalid cartCount payload:", action.payload);
+        return state; // Don't overwrite state with invalid data
+      }
+      return {
+        ...state,
+        cartCount: action.payload
+      };
+    }
     default:
       return state;
   }
