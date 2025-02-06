@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode"; // To decode the token
-import Footer from "../pages/footer";
-import AppNavbar from "../common/AppNavbar";
+
 import Confetti from "react-confetti";
 import freeDelivery from "../../assets/free-delivery.svg";
 import refund from "../../assets/hand-holding-us-dollar.svg";
@@ -84,7 +83,7 @@ const ProductPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
-      <AppNavbar />
+     
 
       {/* Hero Section */}
       <div className="relative bg-gray-900">
@@ -230,7 +229,7 @@ const ProductPage = () => {
           </div>
         </div>
       )}
-      <Footer />
+      
     </div>
   );
 };

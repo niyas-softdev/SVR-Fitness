@@ -13,6 +13,7 @@ const productRoute = require("./routes/productRoute");
 const nutritionRoute = require("./routes/nutritionRoute");
 const adminRoute = require("./routes/adminRoute");
 const cartRoute = require("./routes/cartRoute");
+const profileRoute = require("./routes/profileRoute")
 
 const app = express();
 
@@ -30,18 +31,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:3000"];
 
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("Not allowed by CORS"));
-//       }
-//     },
-//     credentials: true, // Allow cookies to be sent cross-origin
-//   })
-// );
+
 
 app.use(
   cors({
@@ -58,6 +48,7 @@ app.use("/api/product", productRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/nutrition", nutritionRoute);
 app.use("/api/cart", cartRoute);
+app.use("/api/profile", profileRoute);
 
 // 404 Route handler
 app.use((req, res, next) => {

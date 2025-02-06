@@ -42,6 +42,7 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex">
+      
       {/* Mobile Sidebar */}
 <Transition show={sidebarOpen} as={React.Fragment}>
   <Dialog

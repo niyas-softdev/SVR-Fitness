@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { workoutPlans } from "../datas/workoutDatas";
-import AppNavbar from "../common/AppNavbar";
+
 import BMICalculator from "./bmiCalculator";
 import StatsSection from "../section/statsSection";
 import { motion } from "framer-motion"; // Import Framer Motion for animations
@@ -31,7 +31,7 @@ const WorkoutPlan = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <AppNavbar />
+ 
 
       {/* Hero Section */}
       {/* Hero Section */}

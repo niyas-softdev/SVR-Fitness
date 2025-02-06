@@ -1,7 +1,7 @@
 const CartModel = require("../models/cartModel");
 const mongoose = require("mongoose");
 
-// Get Cart Count
+// Get Cart Count (Distinct Products)
 exports.getCartCount = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -13,19 +13,23 @@ exports.getCartCount = async (req, res) => {
 
     console.log("User ID received:", userId);
 
-    // Fetch the count of cart items for the user
-    const cartCount = await CartModel.aggregate([
-      { $match: { userId: mongoose.Types.ObjectId(userId) } },
-      { $group: { _id: null, totalQuantity: { $sum: "$cartQuantity" } } }
+    // Convert userId to ObjectId properly
+    const objectIdUserId = new mongoose.Types.ObjectId(userId);
+
+    // Fetch the count of distinct products in the user's cart
+    const productCount = await CartModel.aggregate([
+      { $match: { userId: objectIdUserId } }, // Match cart items for the user
+      { $group: { _id: "$productId" } }, // Group by productId
+      { $count: "distinctProducts" }, // Count the distinct productId entries
     ]);
 
-    const totalQuantity = cartCount.length > 0 ? cartCount[0].totalQuantity : 0;
+    const distinctProducts = productCount.length > 0 ? productCount[0].distinctProducts : 0;
 
-    console.log("Cart count fetched:", totalQuantity);
+    console.log("Distinct products in cart:", distinctProducts);
 
     res.status(200).json({
       message: "Cart count fetched successfully",
-      cartCount: totalQuantity,
+      cartCount: distinctProducts,
     });
   } catch (error) {
     console.error("Error fetching cart count:", error);
