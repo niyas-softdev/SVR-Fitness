@@ -17,7 +17,6 @@ const navigation = [
   { name: "Profile", path: "/profile", icon: faUser },
   { name: "Cart", path: "/profile/cart", icon: faCartShopping },
   { name: "Orders", path: "/profile/orders", icon: faClipboardList },
-  { name: "Logout", path: "/logout", icon: faRightFromBracket },
 ];
 
 function classNames(...classes) {
@@ -29,16 +28,18 @@ const ProfileLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Logout Function
+  const handleLogout = () => {
+    sessionStorage.removeItem("userToken"); // Remove token
+    localStorage.removeItem("userId"); // Remove userId
+    navigate("/authpopup"); // Redirect to login/auth popup
+  };
+
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
       {/* Mobile Sidebar */}
       <Transition show={sidebarOpen} as={React.Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50 lg:hidden"
-          open={sidebarOpen}
-          onClose={setSidebarOpen}
-        >
+        <Dialog as="div" className="relative z-50 lg:hidden" open={sidebarOpen} onClose={setSidebarOpen}>
           <Transition.Child
             as={React.Fragment}
             enter="transition-opacity ease-linear duration-300"
@@ -48,7 +49,7 @@ const ProfileLayout = () => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-gray-900/80" aria-hidden="true" />
+            <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
           </Transition.Child>
 
           <div className="fixed inset-0 flex">
@@ -61,18 +62,17 @@ const ProfileLayout = () => {
               leaveFrom="translate-x-0"
               leaveTo="-translate-x-full"
             >
-              <Dialog.Panel className="relative flex w-full max-w-xs flex-col bg-gray-900 p-6 shadow-lg">
+              <Dialog.Panel className="relative flex flex-col w-64 bg-gray-900 p-6 shadow-xl">
+                {/* Close Button */}
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
                   className="absolute top-4 right-4 text-gray-400 hover:text-white"
                 >
-                  <FontAwesomeIcon
-                    icon={faXmark}
-                    className="h-6 w-6"
-                    aria-hidden="true"
-                  />
+                  <FontAwesomeIcon icon={faXmark} className="h-6 w-6" aria-hidden="true" />
                 </button>
+
+                {/* Navigation Links */}
                 <nav className="mt-10 space-y-4">
                   {navigation.map((item) => (
                     <Link
@@ -80,20 +80,23 @@ const ProfileLayout = () => {
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
                       className={classNames(
-                        location.pathname === item.path
-                          ? "bg-gray-800 text-white"
-                          : "text-gray-400 hover:bg-gray-800 hover:text-white",
+                        location.pathname === item.path ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white",
                         "flex items-center gap-x-4 rounded-md p-3 text-sm font-semibold"
                       )}
                     >
-                      <FontAwesomeIcon
-                        icon={item.icon}
-                        className="h-5 w-5"
-                        aria-hidden="true"
-                      />
+                      <FontAwesomeIcon icon={item.icon} className="h-5 w-5" aria-hidden="true" />
                       {item.name}
                     </Link>
                   ))}
+
+                  {/* Logout Button (Not a link, it triggers `handleLogout`) */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-x-4 text-left p-3 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white rounded-md"
+                  >
+                    <FontAwesomeIcon icon={faRightFromBracket} className="h-5 w-5" aria-hidden="true" />
+                    Logout
+                  </button>
                 </nav>
               </Dialog.Panel>
             </Transition.Child>
@@ -102,34 +105,37 @@ const ProfileLayout = () => {
       </Transition>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-72 bg-gray-900 p-6 shadow-lg">
+      <div className="hidden lg:flex lg:flex-col lg:w-64 bg-gray-900 p-6 shadow-xl">
         <nav className="mt-6 space-y-4">
           {navigation.map((item) => (
             <Link
               key={item.name}
               to={item.path}
               className={classNames(
-                location.pathname === item.path
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white",
+                location.pathname === item.path ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white",
                 "flex items-center gap-x-4 rounded-md p-3 text-sm font-semibold"
               )}
             >
-              <FontAwesomeIcon
-                icon={item.icon}
-                className="h-5 w-5"
-                aria-hidden="true"
-              />
+              <FontAwesomeIcon icon={item.icon} className="h-5 w-5" aria-hidden="true" />
               {item.name}
             </Link>
           ))}
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-x-4 text-left p-3 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white rounded-md"
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} className="h-5 w-5" aria-hidden="true" />
+            Logout
+          </button>
         </nav>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-72 bg-gray-900">
+      <div className="flex-1 flex flex-col bg-gray-900">
         {/* Mobile Top Bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between bg-gray-900 px-6 py-4 shadow-md lg:hidden">
+        <div className="sticky top-0 z-40 flex items-center justify-between bg-gray-900 px-5 py-4 shadow-md lg:hidden">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -137,17 +143,14 @@ const ProfileLayout = () => {
           >
             <FontAwesomeIcon icon={faBars} className="h-6 w-6" aria-hidden="true" />
           </button>
-          <h1
-            className="text-lg font-semibold text-white cursor-pointer"
-            onClick={() => navigate("/")}
-          >
+          <h1 className="text-lg font-semibold text-white cursor-pointer" onClick={() => navigate("/")}>
             User Dashboard
           </h1>
         </div>
 
-        {/* Main Content */}
-        <main className="flex-grow flex items-center justify-center py-10 px-6 sm:px-8 lg:px-10">
-          <div className="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-5xl">
+        {/* Scrollable Content */}
+        <main className="flex-grow overflow-y-auto bg-gray-900 py-10 px-4 sm:px-6 lg:px-8">
+          <div className="bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto">
             <Outlet /> {/* Renders the selected page here */}
           </div>
         </main>

@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema(
     plan: {
       type: String
     },
+    address:{
+      type: String
+    },
     planDate: {
       type: Date
     },
