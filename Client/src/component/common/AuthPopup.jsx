@@ -12,47 +12,47 @@ const AuthPopup = () => {
   const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(true);
 
-  const handleLogin = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_API}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(loginFormData),
-          credentials: "include",
-        }
-      );
+  // const handleLogin = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `${import.meta.env.VITE_BACKEND_API}/api/auth/login`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(loginFormData),
+  //         credentials: "include",
+  //       }
+  //     );
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (data.ok) {
-        toast.success(data.message);
+  //     if (data.ok) {
+  //       toast.success(data.message);
 
-        const userData = {
-          id: data.data.userId,
-          email: loginFormData.email,
-          role: data.data.role,
-          authToken: data.data.authToken,
-          refreshToken: data.data.refreshToken,
-        };
+  //       const userData = {
+  //         id: data.data.userId,
+  //         email: loginFormData.email,
+  //         role: data.data.role,
+  //         authToken: data.data.authToken,
+  //         refreshToken: data.data.refreshToken,
+  //       };
 
-        localStorage.setItem("userData", JSON.stringify(userData));
-        localStorage.setItem("userId", userData.id);
+  //       localStorage.setItem("userData", JSON.stringify(userData));
+  //       localStorage.setItem("userId", userData.id);
 
-        if (userData.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/user");
-        }
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Login failed. Please try again.");
-    }
-  };
+  //       if (userData.role === "admin") {
+  //         navigate("/admin");
+  //       } else {
+  //         navigate("/user");
+  //       }
+  //     } else {
+  //       toast.error(data.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     toast.error("Login failed. Please try again.");
+  //   }
+  // };
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {

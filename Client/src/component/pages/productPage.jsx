@@ -117,7 +117,7 @@ const ProductPage = () => {
             />
             <div>
               <h3 className="text-lg font-bold text-white">Free Shipping</h3>
-              <p className="text-sm text-gray-400">Order over $200</p>
+              <p className="text-sm text-gray-400">Order over ₹200</p>
             </div>
           </div>
           <div className="flex items-center border border-gray-700 rounded-lg p-6 bg-gray-800 hover:bg-gray-700 transition duration-300">
@@ -179,7 +179,7 @@ const ProductPage = () => {
                   </p>
                   <div className="flex items-center justify-between mt-4">
                     <span className="text-xl font-bold text-indigo-400">
-                      ${product.price.toFixed(2)}
+                      ₹{product.price.toFixed(2)}
                     </span>
                     <button
                       onClick={(e) => handleAddToCart(e, product)}

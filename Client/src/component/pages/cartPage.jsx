@@ -1,17 +1,17 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDownIcon, CheckIcon, ClockIcon, XMarkIcon } from "@heroicons/react/24/outline";
-
+import { ChevronDownIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from 'react-router-dom'; // ✅ Instead of next/router
 import { removeFromCart, updateCartItemQuantity, fetchCartItem } from "../Redux/cart/cartAction";
 
 const CartPage = () => {
   const userId = localStorage.getItem("userId");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const cartData = useSelector((state) => state.cart);
   const { items = [], subtotal = 0, cartCount = 0, totalCartQuantity = 0 } = cartData;
 
-  // Fetch cart items on mount
   useEffect(() => {
     if (!userId) {
       console.warn("User ID not found. Please log in.");
@@ -40,17 +40,18 @@ const CartPage = () => {
     }
   };
 
+  const handleCheckout = () => {
+    navigate('/checkout'); // ✅ Works without reload
+  };
+
   return (
     <div className="bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen text-gray-300">
-    
       <div className="mx-auto max-w-2xl px-4 pt-16 pb-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Shopping Cart</h1>
         <form className="mt-12 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16">
-          {/* Cart Items Section */}
+          {/* Cart Items */}
           <section aria-labelledby="cart-heading" className="lg:col-span-7">
-            <h2 id="cart-heading" className="sr-only">
-              Items in your shopping cart
-            </h2>
+            <h2 id="cart-heading" className="sr-only">Items in your shopping cart</h2>
             {items.length === 0 ? (
               <p className="text-center text-gray-400">Your cart is empty.</p>
             ) : (
@@ -73,7 +74,7 @@ const CartPage = () => {
                             </h3>
                           </div>
                           <p className="mt-1 text-sm font-medium text-gray-400">
-                            ${(item.price || 0).toFixed(2)}
+                          ₹{(item.price || 0).toFixed(2)}
                           </p>
                         </div>
                         <div className="mt-4 sm:mt-0 sm:pr-9">
@@ -119,7 +120,7 @@ const CartPage = () => {
             )}
           </section>
 
-          {/* Order Summary Section */}
+          {/* Order Summary */}
           <section
             aria-labelledby="summary-heading"
             className="mt-16 rounded-lg bg-gray-800 px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8"
@@ -130,7 +131,7 @@ const CartPage = () => {
             <dl className="mt-6 space-y-4">
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-gray-400">Subtotal</dt>
-                <dd className="text-sm font-medium text-gray-200">${subtotal.toFixed(2)}</dd>
+                <dd className="text-sm font-medium text-gray-200">₹{subtotal.toFixed(2)}</dd>
               </div>
               <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                 <dt className="text-sm text-gray-400">Total Quantity</dt>
@@ -138,12 +139,13 @@ const CartPage = () => {
               </div>
               <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                 <dt className="text-base font-medium text-white">Order Total</dt>
-                <dd className="text-base font-medium text-gray-200">${subtotal.toFixed(2)}</dd>
+                <dd className="text-base font-medium text-gray-200">₹{subtotal.toFixed(2)}</dd>
               </div>
             </dl>
             <div className="mt-6">
               <button
-                type="submit"
+                type="button"
+                onClick={handleCheckout} // ✅ updated here
                 className="w-full rounded-md bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900"
               >
                 Checkout
@@ -152,7 +154,6 @@ const CartPage = () => {
           </section>
         </form>
       </div>
-      
     </div>
   );
 };

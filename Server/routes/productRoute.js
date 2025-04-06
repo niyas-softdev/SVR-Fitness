@@ -14,12 +14,16 @@ const checkRole = (role) => (req, res, next) => {
 
 const {
   getProduct,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,productCount
 } = require("../controllers/productController");
 
 router.get("/get", getProduct);
+router.get("/get/:id", getProductById);
+
+
 
 router.get("/productCount",productCount)
 

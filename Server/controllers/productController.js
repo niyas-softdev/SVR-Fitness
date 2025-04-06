@@ -14,6 +14,19 @@ const getProduct = async (req, res) => {
   }
 };
 
+// GET /api/product/:productId
+const getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id); // ✅ use 'id' here
+    if (!product) return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true, data: product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+
 // CREATE a new product
 const createProduct = async (req, res) => {
   try {
@@ -81,6 +94,7 @@ const deleteProduct = async (req, res) => {
 
 module.exports = {
   getProduct,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,

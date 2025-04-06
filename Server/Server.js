@@ -14,6 +14,11 @@ const nutritionRoute = require("./routes/nutritionRoute");
 const adminRoute = require("./routes/adminRoute");
 const cartRoute = require("./routes/cartRoute");
 const profileRoute = require("./routes/profileRoute")
+const paymentRoutes = require("./routes/paymentRoutes");
+const membershipRoutes = require("./routes/membershipRoutes");
+
+
+
 
 const app = express();
 
@@ -49,6 +54,9 @@ app.use("/api/admin", adminRoute);
 app.use("/api/nutrition", nutritionRoute);
 app.use("/api/cart", cartRoute);
 app.use("/api/profile", profileRoute);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/membership", membershipRoutes);
+
 
 // 404 Route handler
 app.use((req, res, next) => {

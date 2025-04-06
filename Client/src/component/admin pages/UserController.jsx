@@ -1,86 +1,50 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { MdSystemUpdateAlt, MdDelete, MdAutorenew } from "react-icons/md";
-import { FaWhatsapp } from "react-icons/fa"; // WhatsApp icon import
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { MdEdit, MdDelete } from "react-icons/md";
+import { FaWhatsapp } from "react-icons/fa";
 
-// Axios instance with base URL
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_API || "http://localhost:5174"
 });
 
 function UserController() {
   const [users, setUsers] = useState([]);
-  const [userCount, setUserCount] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // States for editing user
-  const [editingUser, setEditingUser] = useState(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [role, setRole] = useState("");
-  const [plan, setPlan] = useState("");
-  const [planDate, setPlanDate] = useState("");
-  const [planStatus, setPlanStatus] = useState(false);
-  const [expiryDate, setExpiryDate] = useState("");
-  const [userId, setUserId] = useState(""); // Added to handle userId in edit mode
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [currentUserPhone, setCurrentUserPhone] = useState("");
-  const plans = [
-    "1 Month Plan",
-    "3 Months Plan",
-    "6 Months Plan",
-    "Annual Plan"
-  ];
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [step, setStep] = useState(1);
 
   const getToken = () => sessionStorage.getItem("userToken") || "";
 
   useEffect(() => {
     fetchUsers();
-    fetchUserCount();
   }, []);
 
-  const fetchUsers = async (searchQuery = "") => {
+  const fetchUsers = async () => {
     try {
-      let response;
-      if (searchQuery) {
-        response = await axiosInstance.get("/api/user/search", {
-          headers: { Authorization: `Bearer ${getToken()}` },
-          params: { name: searchQuery, userId: searchQuery }
-        });
-      } else {
-        response = await axiosInstance.get("/api/user/get", {
-          headers: { Authorization: `Bearer ${getToken()}` }
-        });
-      }
-      setUsers(response.data.data);
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        toast.error("No users found.");
-      } else {
-        toast.error("Failed to fetch users.");
-      }
-      setUsers([]);
-    }
-  };
-
-  const fetchUserCount = async () => {
-    try {
-      const response = await axiosInstance.get("/api/user/userCount", {
+      const response = await axiosInstance.get("/api/user/get", {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
-      setUserCount(response.data.count);
+      setUsers(response.data.data);
     } catch (error) {
-      toast.error("Failed to fetch user count.");
+      toast.error("Failed to fetch users.");
     }
   };
 
-  const handleSearch = (event) => {
-    event.preventDefault();
-    fetchUsers(searchQuery);
+  const handleDetailsClick = (user, edit = false) => {
+    setSelectedUser(user);
+    setIsEditMode(edit);
+    setIsPopupOpen(true);
+    setStep(1);
+  };
+
+  const closePopup = () => {
+    setIsPopupOpen(false);
+    setSelectedUser(null);
+    setIsEditMode(false);
+    setStep(1);
   };
 
   const handleDelete = async (id) => {
@@ -89,374 +53,191 @@ function UserController() {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       toast.success("User deleted successfully.");
-      setUsers(users.filter((user) => user._id !== id));
+      fetchUsers();
     } catch (error) {
       toast.error("Failed to delete user.");
     }
   };
 
-  const handleEditClick = (user) => {
-    setEditingUser(user);
-    setName(user.name);
-    setEmail(user.email);
-    setPhoneNumber(user.phoneNumber);
-    setRole(user.role);
-    setPlanStatus(user.planStatus);
-    setPlanDate(formatDate(user.planDate));
-    setPlan(user.plan);
-    setExpiryDate(formatDate(user.expiryDate));
-    setUserId(user.userId); // Set userId when editing
+  const handleWhatsapp = (user) => {
+    const url = `https://wa.me/${user.phoneNumber}?text=Hello%20${user.name}`;
+    window.open(url, '_blank');
   };
 
-  const handleResetUserId = async () => {
-    try {
-      // Reset userId on the backend for the editing user
-      const response = await axiosInstance.put(
-        `/api/user/resetUserId/${editingUser._id}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${getToken()}` }
-        }
-      );
-      toast.success("User ID reset successfully.");
-      setUserId(response.data.data.userId); // Update the new userId in the form
-    } catch (error) {
-      toast.error("Failed to reset User ID.");
+  const handleNext = () => {
+    if (step < 2) {
+      setStep(step + 1);
     }
   };
 
-  const formatDate = (isoDate) => {
-    if (!isoDate) return "";
-    const date = new Date(isoDate);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  const handleUpdate = async (event) => {
-    event.preventDefault();
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (step < 2) {
+      handleNext();
+      return;
+    }
     try {
-      const userData = {
-        name,
-        email,
-        phoneNumber,
-        role,
-        plan,
-        planDate,
-        planStatus
-      };
-      await axiosInstance.put(`/api/user/update/${editingUser._id}`, userData, {
+      const updatedUser = { ...selectedUser };
+      await axiosInstance.put(`/api/user/update/${selectedUser._id}`, updatedUser, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       toast.success("User updated successfully.");
-      resetForm();
+      closePopup();
       fetchUsers();
     } catch (error) {
       toast.error("Failed to update user.");
     }
   };
 
-  const resetForm = () => {
-    setEditingUser(null);
-    setName("");
-    setEmail("");
-    setPhoneNumber("");
-    setRole("");
-    setPlan("");
-    setPlanDate("");
-    setExpiryDate("");
-    setPlanStatus(false);
-    setUserId(""); // Reset userId field
-  };
-
-  const handleWhatsAppClick = (user) => {
-    const defaultMessage = `User ID: ${user.userId}\nName: ${
-      user.name
-    }\nPlan: ${user.plan}\nJoin Date: ${new Date(
-      user.planDate
-    ).toLocaleDateString()}\nExpiry Date: ${new Date(
-      user.expiryDate
-    ).toLocaleDateString()}\nStatus: ${
-      user.planStatus ? "Paid Successfully" : "Pending"
-    }`;
-    setCurrentUserPhone(user.phoneNumber);
-    setMessage(defaultMessage);
-    setIsModalOpen(true);
-  };
-
-  const sendMessage = () => {
-    const url = `https://wa.me/${currentUserPhone}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(url, "_blank");
-    setIsModalOpen(false); // Close the modal after sending
-  };
-
   return (
-    <div className="container mx-auto min-h-screen py-5 px-4 bg-black text-white">
-      {!editingUser && (
-        <>
-          <div className="mb-8 flex justify-between items-center">
-            <h1 className="text-3xl font-extrabold">
-              User Management ({userCount})
-            </h1>
-            <form onSubmit={handleSearch} className="flex items-center">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or User ID"
-                className="bg-white/10 p-2 rounded-lg border-none text-white"
-              />
+    <div className="min-h-screen bg-zinc-900 text-white p-4">
+      <h1 className="text-2xl font-bold mb-6">User Controller</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {users.map((user) => (
+          <div
+            key={user._id}
+            className="bg-zinc-800 p-5 rounded-xl shadow-lg flex flex-col justify-between"
+          >
+            <div>
+              <p className="text-lg font-semibold">{user.name}</p>
+              <p className="text-sm text-gray-400">ID: {user.userId}</p>
+            </div>
+            <div className="flex justify-between items-center mt-4 gap-2">
               <button
-                type="submit"
-                className="ml-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-500 shadow-md transition-all"
+                onClick={() => handleDetailsClick(user)}
+                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-sm text-white rounded-lg"
               >
-                Search
-              </button>
-            </form>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white bg-opacity-10 backdrop-blur-lg text-white shadow-lg rounded-lg">
-              <thead>
-                <tr className="bg-white bg-opacity-20">
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    User ID
-                  </th>
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    Name
-                  </th>
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    Plan
-                  </th>
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    Joined Date
-                  </th>
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    Expiry Date
-                  </th>
-                  <th className="py-4 px-6 border-b border-white text-left">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length > 0 ? (
-                  users.map((user) => (
-                    <tr
-                      key={user._id}
-                      className="hover:bg-white hover:bg-opacity-20 transition"
-                    >
-                      <td className="py-4 px-6 border-b border-white">
-                        {user.userId}
-                      </td>
-                      <td className="py-4 px-6 border-b border-white">
-                        {user.name}
-                      </td>
-                      <td className="py-4 px-6 border-b border-white">
-                        {user.plan}
-                      </td>
-                      <td className="py-4 px-6 border-b border-white">
-                        {new Date(user.planDate).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6 border-b border-white">
-                        {new Date(user.expiryDate).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6 border-b border-white flex gap-2">
-                        <button
-                          onClick={() => handleEditClick(user)}
-                          className="bg-yellow-500/50 py-2 px-4 rounded-lg hover:bg-yellow-600/50 transition-all flex items-center"
-                        >
-                          <MdSystemUpdateAlt className="mr-2" /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user._id)}
-                          className="bg-red-500/50 py-2 px-4 rounded-lg hover:bg-red-600/50 transition-all flex items-center"
-                        >
-                          <MdDelete className="mr-2" /> Delete
-                        </button>
-                        <button
-                          onClick={() => handleWhatsAppClick(user)}
-                          className="bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all flex items-center"
-                        >
-                          <FaWhatsapp />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td className="text-center py-4 px-6" colSpan="6">
-                      No users found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-80 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800 dark:text-white">
-              Send WhatsApp Message
-            </h2>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter your message"
-              rows="4"
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400 mb-4 text-black"
-            />
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={sendMessage}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition"
-              >
-                Send
+                Details
               </button>
               <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition"
+                onClick={() => handleWhatsapp(user)}
+                className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
               >
-                Cancel
+                <FaWhatsapp />
+              </button>
+              <button
+                onClick={() => handleDetailsClick(user, true)}
+                className="flex items-center justify-center px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+              >
+                <MdEdit />
+              </button>
+              <button
+                onClick={() => handleDelete(user._id)}
+                className="flex items-center justify-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+              >
+                <MdDelete />
               </button>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Edit User Form */}
-      {editingUser && (
-        <div className="flex justify-center items-center">
-          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-lg shadow-lg max-w-lg w-full">
-            <h3 className="text-2xl font-bold mb-6 text-center">Edit User</h3>
-            <form onSubmit={handleUpdate}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">User ID</label>
-                  <input
-                    type="text"
-                    value={userId}
-                    readOnly
-                    className="w-full bg-gray-700 text-gray-300 p-2 rounded-lg border-none"
-                  />
+      {isPopupOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-zinc-800 text-white rounded-lg p-6 w-full max-w-md relative">
+            <button
+              onClick={closePopup}
+              className="absolute top-2 right-2 text-white text-xl font-bold"
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4">
+              {isEditMode ? `Edit User (Step ${step})` : "User Details"}
+            </h2>
+            {isEditMode ? (
+              <form onSubmit={handleUpdate} className="flex flex-col gap-3">
+                {step === 1 && (
+                  <>
+                    <input
+                      type="text"
+                      value={selectedUser.name}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
+                      placeholder="Name"
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                    <input
+                      type="email"
+                      value={selectedUser.email}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+                      placeholder="Email"
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                    <input
+                      type="text"
+                      value={selectedUser.phoneNumber}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, phoneNumber: e.target.value })}
+                      placeholder="Phone Number"
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                  </>
+                )}
+                {step === 2 && (
+                  <>
+                    <input
+                      type="text"
+                      value={selectedUser.role}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
+                      placeholder="Role"
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                    <input
+                      type="text"
+                      value={selectedUser.plan}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, plan: e.target.value })}
+                      placeholder="Plan"
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                    <input
+                      type="date"
+                      value={selectedUser.planDate?.split("T")[0] || ""}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, planDate: e.target.value })}
+                      className="p-2 bg-zinc-700 text-white border border-zinc-600 rounded"
+                    />
+                    <label className="flex gap-2 items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedUser.planStatus}
+                        onChange={(e) => setSelectedUser({ ...selectedUser, planStatus: e.target.checked })}
+                      />
+                      Active Plan
+                    </label>
+                  </>
+                )}
+                <div className="flex justify-between mt-4">
+                  {step > 1 && (
+                    <button type="button" onClick={() => setStep(step - 1)} className="bg-gray-500 text-white px-4 py-2 rounded">
+                      Back
+                    </button>
+                  )}
                   <button
-                    type="button"
-                    onClick={handleResetUserId}
-                    className="mt-2 bg-blue-500 py-2 px-4 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center"
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
                   >
-                    <MdAutorenew className="mr-2" /> Reset ID
+                    {step < 2 ? "Next" : "Save Changes"}
                   </button>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Role</label>
-                  <input
-                    type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Plan</label>
-                  <select
-                    value={plan}
-                    onChange={(e) => setPlan(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select Plan
-                    </option>
-                    {plans.map((p) => (
-                      <option key={p} value={p} className="text-gray-800">
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm mb-1">Plan Date</label>
-                  <input
-                    type="date"
-                    value={planDate}
-                    onChange={(e) => setPlanDate(e.target.value)}
-                    className="w-full bg-white/10 p-2 rounded-lg border-none"
-                    required
-                  />
-                </div>
+              </form>
+            ) : (
+              <div className="space-y-2">
+                <p><strong>Name:</strong> {selectedUser.name}</p>
+                <p><strong>User ID:</strong> {selectedUser.userId}</p>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>Phone:</strong> {selectedUser.phoneNumber}</p>
+                <p><strong>Role:</strong> {selectedUser.role}</p>
+                <p><strong>Plan:</strong> {selectedUser.plan}</p>
+                <p><strong>Plan Date:</strong> {new Date(selectedUser.planDate).toLocaleDateString()}</p>
+                <p><strong>Expiry Date:</strong> {new Date(selectedUser.expiryDate).toLocaleDateString()}</p>
+                <p><strong>Status:</strong> {selectedUser.planStatus ? "Active" : "Inactive"}</p>
               </div>
-              <div className="mb-4">
-                <label className="block text-sm mb-1">Expiry Date</label>
-                <input
-                  type="text"
-                  value={expiryDate}
-                  readOnly
-                  className="w-full bg-white/10 p-2 rounded-lg border-none"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={planStatus}
-                    onChange={(e) => setPlanStatus(e.target.checked)}
-                    className="mr-2"
-                  />
-                  Active Plan Status
-                </label>
-              </div>
-              <div className="flex justify-end gap-4">
-                <button
-                  type="submit"
-                  className="bg-green-500/50 py-2 px-4 rounded-lg hover:bg-green-600/50 transition-all"
-                >
-                  Update User
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="bg-red-500/50 py-2 px-4 rounded-lg hover:bg-red-600/50 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+            )}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={closePopup}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

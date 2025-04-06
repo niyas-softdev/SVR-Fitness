@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,15 +9,12 @@ import {
   faClipboardList,
   faRightFromBracket,
   faHome,
+  faFileAlt,
+  faUsers,
+  faBox,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-
-const navigation = [
-  { name: "Home", path: "/", icon: faHome },
-  { name: "Profile", path: "/profile", icon: faUser },
-  { name: "Cart", path: "/profile/cart", icon: faCartShopping },
-  { name: "Orders", path: "/profile/orders", icon: faClipboardList },
-];
+import axios from "axios";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -25,23 +22,86 @@ function classNames(...classes) {
 
 const ProfileLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Logout Function
   const handleLogout = () => {
-    sessionStorage.removeItem("userToken"); // Remove token
-    localStorage.removeItem("userId"); // Remove userId
-    navigate("/authpopup"); // Redirect to login/auth popup
+    sessionStorage.removeItem("userToken");
+    localStorage.removeItem("userId");
+    navigate("/authpopup");
   };
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      navigate("/authpopup");
+      return;
+    }
+
+    axios
+      .get(`http://localhost:5174/api/profile/get/${userId}`, {
+        headers: { userid: userId },
+      })
+      .then((response) => {
+        if (response.data.success) {
+          const userData = response.data.data;
+          console.log("Fetched user data:", userData);
+          if (userData.role === "admin" || userData.role === "user") {
+            setRole(userData.role);
+          } else {
+            console.warn("Invalid role detected");
+            navigate("/authpopup");
+          }
+        } else {
+          console.warn("API responded with success: false");
+          navigate("/authpopup");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+        navigate("/authpopup");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [navigate]);
+
+  const adminNavigation = [
+    { name: "Home", path: "/", icon: faHome },
+    { name: "Profile", path: "/profile", icon: faUser },
+    { name: "Dashboard", path: "/profile/adminHome", icon: faHome },
+    { name: "Products", path: "/profile/productController", icon: faBox },
+    { name: "Users", path: "/profile/userController", icon: faUsers },
+    { name: "Expired", path: "/profile/expireUser", icon: faClipboardList },
+  ];
+  
+
+  const userNavigation = [
+    { name: "Home", path: "/", icon: faHome },
+    { name: "Profile", path: "/profile", icon: faUser },
+    { name: "Cart", path: "/profile/cart", icon: faCartShopping },
+    { name: "OrderHistory", path: "/profile/orderHistory", icon: faClipboardList },
+  ];
+
+  const navigation = role === "admin" ? adminNavigation : userNavigation;
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
       {/* Mobile Sidebar */}
-      <Transition show={sidebarOpen} as={React.Fragment}>
+      <Transition show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 lg:hidden" open={sidebarOpen} onClose={setSidebarOpen}>
           <Transition.Child
-            as={React.Fragment}
+            as={Fragment}
             enter="transition-opacity ease-linear duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
@@ -54,7 +114,7 @@ const ProfileLayout = () => {
 
           <div className="fixed inset-0 flex">
             <Transition.Child
-              as={React.Fragment}
+              as={Fragment}
               enter="transform transition ease-in-out duration-300"
               enterFrom="-translate-x-full"
               enterTo="translate-x-0"
@@ -63,7 +123,6 @@ const ProfileLayout = () => {
               leaveTo="-translate-x-full"
             >
               <Dialog.Panel className="relative flex flex-col w-64 bg-gray-900 p-6 shadow-xl">
-                {/* Close Button */}
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
@@ -72,7 +131,6 @@ const ProfileLayout = () => {
                   <FontAwesomeIcon icon={faXmark} className="h-6 w-6" aria-hidden="true" />
                 </button>
 
-                {/* Navigation Links */}
                 <nav className="mt-10 space-y-4">
                   {navigation.map((item) => (
                     <Link
@@ -89,7 +147,6 @@ const ProfileLayout = () => {
                     </Link>
                   ))}
 
-                  {/* Logout Button (Not a link, it triggers `handleLogout`) */}
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-x-4 text-left p-3 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white rounded-md"
@@ -121,7 +178,6 @@ const ProfileLayout = () => {
             </Link>
           ))}
 
-          {/* Logout Button */}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-x-4 text-left p-3 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white rounded-md"
@@ -132,9 +188,8 @@ const ProfileLayout = () => {
         </nav>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col bg-gray-900">
-        {/* Mobile Top Bar */}
         <div className="sticky top-0 z-40 flex items-center justify-between bg-gray-900 px-5 py-4 shadow-md lg:hidden">
           <button
             type="button"
@@ -144,14 +199,13 @@ const ProfileLayout = () => {
             <FontAwesomeIcon icon={faBars} className="h-6 w-6" aria-hidden="true" />
           </button>
           <h1 className="text-lg font-semibold text-white cursor-pointer" onClick={() => navigate("/")}>
-            User Dashboard
+            {role === "admin" ? "Admin Dashboard" : "User Dashboard"}
           </h1>
         </div>
 
-        {/* Scrollable Content */}
         <main className="flex-grow overflow-y-auto bg-gray-900 py-10 px-4 sm:px-6 lg:px-8">
           <div className="bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto">
-            <Outlet /> {/* Renders the selected page here */}
+            <Outlet />
           </div>
         </main>
       </div>

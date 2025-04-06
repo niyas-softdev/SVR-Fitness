@@ -47,9 +47,11 @@ function AppNavbar() {
 
   const handleLogout = () => {
     sessionStorage.removeItem("userToken");
+    localStorage.removeItem("userId"); // ← clear this too if you're using it elsewhere
     setIsLoggedIn(false);
     navigate("/authpopup");
   };
+  
 
   return (
     <Disclosure as="nav" className="sticky top-0 z-50 bg-gray-900 shadow-lg border-b border-gray-700">
@@ -64,16 +66,19 @@ function AppNavbar() {
                 <Link to="/" className="text-gray-300 hover:text-white">Home</Link>
                 <Link to="/workoutPlan" className="text-gray-300 hover:text-white">Training</Link>
                 <Link to="/productPage" className="text-gray-300 hover:text-white">Product</Link>
-                {user?.role === "admin" && (
-                  <Link to="/dashboard" className="text-indigo-400 hover:text-indigo-300">Dashboard</Link>
-                )}
+                <Link to="/membership" className="text-gray-300 hover:text-white">Membership</Link>
+
+               
               </div>
               <div className="flex items-center space-x-4">
                 <Link to="/cart" className="relative">
                   <ShoppingCartIcon className="h-6 w-6 text-gray-400 hover:text-white" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-                  )}
+                  {isLoggedIn && cartCount > 0 && (
+  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">
+    {cartCount}
+  </span>
+)}
+
                 </Link>
                 {isLoggedIn ? (
                   <Menu as="div" className="relative">
