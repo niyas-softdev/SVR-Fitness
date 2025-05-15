@@ -74,6 +74,8 @@ const ProfileLayout = () => {
     { name: "Dashboard", path: "/profile/adminHome", icon: faHome },
     { name: "Products", path: "/profile/productController", icon: faBox },
     { name: "Users", path: "/profile/userController", icon: faUsers },
+    { name: "Memberships", path: "/profile/memberships", icon: faUsers },
+    { name: "Order", path: "/profile/order", icon: faUsers },
     { name: "Expired", path: "/profile/expireUser", icon: faClipboardList },
   ];
   

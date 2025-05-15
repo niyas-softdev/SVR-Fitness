@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import AdminRouter from "./AdminRouter";
 import UserRouter from "./UserRouter";
 import MainLayout from "../layouts/mainLayout";
@@ -13,35 +13,27 @@ import MembershipPage from "../pages/MembershipPage";
 import WorkoutPlan from "../pages/workoutPlan";
 import OrderHistory from "../pages/OrderHistory";
 import ProtectedRoute from "../common/ProtectedRoute";
-import axios from "axios";
-
+import { jwtDecode } from "jwt-decode";
 
 const RoleBasedRouter = () => {
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      window.location.href = "/authpopup";
-      return;
+    const token = sessionStorage.getItem("userToken");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setRole(decoded.role);
+      } catch (error) {
+        console.error("Failed to decode token", error);
+        sessionStorage.removeItem("userToken");
+        navigate("/authpopup");
+      }
     }
-
-    axios
-      .get(`http://localhost:5174/api/profile/get/${userId}`, {
-        headers: { userid: userId },
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setRole(res.data.data.role);
-        } else {
-          window.location.href = "/authpopup";
-        }
-      })
-      .catch(() => window.location.href = "/authpopup")
-      .finally(() => setLoading(false));
-  }, []);
+    setLoading(false); // Important: Always end loading state
+  }, [navigate]);
 
   if (loading) {
     return (

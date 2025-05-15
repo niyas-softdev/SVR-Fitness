@@ -7,6 +7,8 @@ import ProductController from "../admin pages/productController";
 import UserController from "../admin pages/UserController";
 import ExpireUser from "../admin pages/ExpireUser";
 import ProfilePage from "../userProfile/profile";
+import Membership from "../admin pages/Membership";
+import Order from "../admin pages/Order";
 
 const AdminRouter = () => {
   return (
@@ -16,6 +18,8 @@ const AdminRouter = () => {
       <Route path="adminHome" element={<AdminHome />} />
       <Route path="productController" element={<ProductController />} />
       <Route path="userController" element={<UserController />} />
+      <Route path="memberships" element={<Membership />} />
+      <Route path="Order" element={<Order />} />
       <Route path="expireUser" element={<ExpireUser />} />
     </Route>
   </Routes>

@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import jsPDF from "jspdf";
-import "jspdf-autotable"; // ✅ attaches autoTable to jsPDF prototype
-
+import "jspdf-autotable";
 import axios from "axios";
 import { motion } from "framer-motion";
-
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -93,61 +91,67 @@ const OrderHistory = () => {
 
   return (
     <motion.div
-      className="p-6 max-w-5xl mx-auto"
+      className="p-4 sm:p-6 max-w-5xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <h1 className="text-4xl font-bold text-center text-white mb-10">Order History</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold text-center text-white mb-10">Order History</h1>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {orders.map((order, index) => (
           <motion.div
             key={order._id}
-            className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100"
+            className="bg-gray-900 rounded-2xl p-5 sm:p-6 border border-gray-700 shadow-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="flex flex-col sm:flex-row sm:justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">
+              <div className="space-y-1">
+                <p className="text-sm text-gray-300 font-medium">
                   <span className="font-semibold">Order ID:</span> {order.razorpayOrderId}
                 </p>
-                <p className="text-sm text-green-600 font-medium">
-                  <span className="font-semibold">Status:</span> {order.status}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-semibold">Date:</span>{" "}
-                  {new Date(order.purchasedAt || order.createdAt).toLocaleString()}
+                <div className="flex items-center gap-2 text-sm text-gray-300 font-medium">
+                  <span className="font-semibold">Status:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    order.status === "success"
+                      ? "bg-green-600 text-white"
+                      : "bg-red-600 text-white"
+                  }`}>
+                    {order.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-400">
+                  <span className="font-semibold">Date:</span> {new Date(order.purchasedAt || order.createdAt).toLocaleString()}
                 </p>
               </div>
-              <div className="text-sm text-gray-800 font-semibold mt-2 sm:mt-0 sm:text-right">
-                Amount: ₹{(order.amount / 100).toFixed(2)}
+              <div className="text-sm font-semibold text-white mt-3 sm:mt-0 sm:text-right space-y-1">
+                <p>Total: ₹{(order.amount / 100).toFixed(2)}</p>
+                <p className="text-xs text-gray-400">
+                  <span className="font-semibold text-white">Delivery:</span> <span className="text-indigo-400 font-medium">{order.deliveryStatus}</span>
+                </p>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {order.items.map((item, idx) => {
                 const product = item.productDetails;
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:shadow transition"
+                    className="flex items-center gap-4 bg-gray-800 rounded-xl p-3"
                   >
                     <img
                       src={product?.imageUrl || "/placeholder.jpg"}
                       alt={product?.name}
-                      className="w-16 h-16 rounded-xl object-cover border"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover"
                     />
                     <div className="flex-1">
-                      <p className="text-base font-semibold text-gray-800">{product?.name}</p>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                      <p className="text-sm text-gray-500">
-                        Unit Price: ₹{product?.price?.toFixed(2)}
-                      </p>
+                      <p className="text-base font-medium text-white">{product?.name}</p>
+                      <p className="text-sm text-gray-400">Qty: {item.quantity} | ₹{product?.price} each</p>
                     </div>
-                    <div className="text-right font-semibold text-gray-700">
+                    <div className="text-right text-white font-bold">
                       ₹{(product?.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
@@ -155,14 +159,7 @@ const OrderHistory = () => {
               })}
             </div>
 
-            <div className="mt-6 text-right">
-              <button
-                onClick={() => generateInvoice(order)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-700 transition"
-              >
-                Download Invoice
-              </button>
-            </div>
+           
           </motion.div>
         ))}
       </div>

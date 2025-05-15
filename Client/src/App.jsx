@@ -5,7 +5,7 @@ import RoleBasedRouter from "./component/routes/RoleBasedRouter";
 const App = () => {
   return (
     <BrowserRouter>
-      <RoleBasedRouter /> {/* This handles all routes inside */}
+      <RoleBasedRouter /> 
     </BrowserRouter>
   );
 };
